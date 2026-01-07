@@ -1,0 +1,1381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paul’s Letters — Interactive Learning App (EN/KR)</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --panel:#111827; --card:#0f172a;
+      --text:#e5e7eb; --muted:#9ca3af; --line:#243244;
+      --accent:#60a5fa; --good:#34d399; --bad:#fb7185; --warn:#fbbf24;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+      --radius: 16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    @media (prefers-color-scheme: light){
+      :root{ --bg:#f7fafc; --panel:#ffffff; --card:#ffffff; --text:#0f172a; --muted:#475569; --line:#e2e8f0; --shadow: 0 10px 30px rgba(2,8,23,.08); }
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; font-family:var(--sans); background:var(--bg); color:var(--text);
+      line-height:1.55;
+    }
+    header{
+      position:sticky; top:0; z-index:20;
+      background:linear-gradient(180deg, rgba(0,0,0,.28), rgba(0,0,0,0));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid var(--line);
+    }
+    .topbar{
+      max-width:1200px; margin:0 auto; padding:14px 16px;
+      display:flex; gap:12px; align-items:center; justify-content:space-between;
+    }
+    .brand{ display:flex; flex-direction:column; gap:2px; }
+    .brand h1{ margin:0; font-size:18px; letter-spacing:.2px; }
+    .brand .sub{ color:var(--muted); font-size:13px; }
+    .controls{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    button, .pill{
+      border:1px solid var(--line); background:var(--panel); color:var(--text);
+      border-radius:999px; padding:8px 12px; font-size:13px; cursor:pointer;
+      transition:.15s transform, .15s opacity;
+    }
+    button:hover{ transform: translateY(-1px); }
+    button:active{ transform: translateY(0); opacity:.9; }
+    .pill{ cursor:default; }
+    .pill strong{ color:var(--accent); }
+    .layout{
+      max-width:1200px; margin:0 auto; padding:16px;
+      display:grid; grid-template-columns: 280px 1fr; gap:14px;
+    }
+    @media (max-width: 980px){
+      .layout{ grid-template-columns: 1fr; }
+      nav{ position:relative; top:auto; }
+    }
+    nav{
+      position:sticky; top:72px; align-self:start;
+      background:var(--panel); border:1px solid var(--line);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .navhead{
+      padding:12px 12px 10px; border-bottom:1px solid var(--line);
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .navhead .muted{ color:var(--muted); font-size:12px; }
+    .navlist{ display:flex; flex-direction:column; padding:8px; gap:6px; }
+    .navbtn{
+      text-align:left; border-radius:12px; padding:10px 10px;
+      border:1px solid transparent; background:transparent;
+      color:var(--text); cursor:pointer; font-size:13px;
+    }
+    .navbtn:hover{ border-color:var(--line); background:rgba(96,165,250,.08); }
+    .navbtn.active{ border-color:rgba(96,165,250,.45); background:rgba(96,165,250,.14); }
+    main{
+      background:var(--panel); border:1px solid var(--line);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px;
+      min-height: 70vh;
+    }
+    .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width: 980px){ .grid2{ grid-template-columns:1fr; } }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:14px;
+    }
+    .card h3{ margin:0 0 8px; font-size:15px; }
+    .muted{ color:var(--muted); }
+    .kicker{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; }
+    .tagrow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .tag{
+      font-size:12px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--line); background:rgba(255,255,255,.02);
+    }
+    details{
+      border:1px solid var(--line); border-radius:14px; padding:10px 12px;
+      background:rgba(255,255,255,.02);
+    }
+    summary{ cursor:pointer; font-weight:600; }
+    .hr{ height:1px; background:var(--line); margin:14px 0; }
+    .quizQ{ margin:12px 0; padding:12px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.02); }
+    .quizQ .qtitle{ font-weight:700; margin-bottom:8px; }
+    .opt{ display:flex; gap:8px; align-items:flex-start; margin:6px 0; }
+    .opt input{ margin-top:4px; }
+    .feedback{
+      margin-top:10px; padding:10px 12px; border-radius:14px;
+      border:1px solid var(--line); background:rgba(0,0,0,.12);
+    }
+    .good{ border-color: rgba(52,211,153,.45) !important; background: rgba(52,211,153,.10) !important; }
+    .bad{ border-color: rgba(251,113,133,.45) !important; background: rgba(251,113,133,.10) !important; }
+    .scorebox{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      padding:10px 12px; border:1px solid var(--line); border-radius:14px;
+      background:rgba(96,165,250,.10);
+    }
+    .scorebox strong{ color:var(--accent); }
+    .footer{
+      max-width:1200px; margin:0 auto; padding:14px 16px 26px;
+      color:var(--muted); font-size:12px;
+    }
+    .mono{ font-family:var(--mono); font-size:12px; }
+    a{ color:var(--accent); }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="topbar">
+    <div class="brand">
+      <h1 id="appTitle">Paul’s Letters — From Anxiety to Agency</h1>
+      <div class="sub" id="appSub">Interactive Learning App • English / 한국어 • 5 MC per highlighted letter</div>
+    </div>
+    <div class="controls">
+      <span class="pill" id="progressPill">Progress: <strong>0%</strong></span>
+      <button id="langBtn" title="Toggle language">한국어</button>
+      <button id="resetBtn" title="Reset saved progress">Reset</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <nav>
+    <div class="navhead">
+      <div class="kicker" id="navKicker">Navigate</div>
+      <div class="muted" id="navHint">Choose a module or a letter.</div>
+    </div>
+    <div class="navlist" id="navlist"></div>
+  </nav>
+
+  <main id="content"></main>
+</div>
+
+<div class="footer" id="footer"></div>
+
+<script>
+/* =========================
+   DATA (EN/KR)
+========================= */
+
+const APP = {
+  meta: {
+    title: { en: "Paul’s Letters — From Anxiety to Agency, From Chaos to Structure", ko: "바울서신 — 불안에서 주체성으로, 혼돈에서 구조로" },
+    subtitle: { en: "Interactive Learning App • English / 한국어 • 5 MC per highlighted letter", ko: "인터랙티브 학습 앱 • English / 한국어 • 핵심 서신별 5문항 객관식" }
+  },
+  modules: [
+    { id:"overview", label:{en:"Overview", ko:"개요"}, icon:"◎" },
+    { id:"paul", label:{en:"Paul the Person", ko:"바울의 다층 정체성"}, icon:"◈" },
+    { id:"sources", label:{en:"Sources & Timeline", ko:"자료와 연대기"}, icon:"⧉" },
+    { id:"glossary", label:{en:"Glossary (Greek)", ko:"용어(헬라어)"}, icon:"Σ" },
+    { id:"letters", label:{en:"Letters Hub", ko:"서신 허브"}, icon:"✉" }
+  ],
+  overview: {
+    cards: [
+      {
+        title:{en:"Etic-person entering Emic-space", ko:"에틱(현대 독자) → 에믹(1세기 공동체)"},
+        body:{
+          en:"Read Paul as formation-in-motion: we enter first-century churches’ conflicts (Emic-space) as contemporary interpreters (Etic-persons), mapping how Paul moves communities from crisis to stability, from anxiety to agency.",
+          ko:"바울을 ‘움직이는 형성’으로 읽는다: 우리는 현대의 독자(에틱)가 1세기 교회의 내적 세계(에믹)에 들어가, 바울이 공동체를 위기→안정, 불안→주체성으로 이동시키는 경로를 추적한다."
+        },
+        tags:[
+          {en:"Formation pathway", ko:"형성 경로"},
+          {en:"Crisis → Stability", ko:"위기 → 안정"},
+          {en:"Anxiety → Agency", ko:"불안 → 주체성"}
+        ]
+      },
+      {
+        title:{en:"Canonical priority & kairos urgency", ko:"정경적 우선성 & 카이로스 긴박성"},
+        body:{
+          en:"Paul’s letters are the earliest Christian writings (e.g., 1 Thess ~ AD 50–51 per Brown). They are not armchair theology but crisis-forged tools written amid mission, persecution, and pastoral pressure.",
+          ko:"바울서신은 신약에서 가장 이른 문서들(예: 데살로니가전서, Brown에 따르면 AD 50–51)이다. ‘서재 신학’이 아니라 선교·박해·목회 압력 속에서 형성된 위기 대응 도구다."
+        },
+        tags:[
+          {en:"Chronos → Kairos", ko:"크로노스 → 카이로스"},
+          {en:"Occasional letters", ko:"상황적 서신"},
+          {en:"Living words", ko:"살아있는 말씀"}
+        ]
+      },
+      {
+        title:{en:"MDHC coordinates (summary)", ko:"MDHC 좌표(요약)"},
+        body:{
+          en:"T: AD 50–66 (chronos) read as kairos; S: Emic-space (inside faith tradition); M: toward-justice/toward-God—Paul stabilizes communities into maturity and reproducible leadership.",
+          ko:"T: AD 50–66(연대기) → 카이로스 읽기; S: 에믹 공간(신앙 전통 내부); M: 정의/하나님을 향한 운동—바울은 공동체를 성숙과 재생산 가능한 리더십으로 안정화한다."
+        },
+        tags:[
+          {en:"T / S / M", ko:"T / S / M"},
+          {en:"Return → Sending", ko:"귀환 → 파송"},
+          {en:"Justice shield", ko:"정의의 방패"}
+        ]
+      }
+    ],
+    note:{
+      en:"Use the Letters Hub to study each letter as a ‘Metabus route’: Crisis Node → Kairos Moment → Justice Shield → Target Node.",
+      ko:"서신 허브에서 각 서신을 ‘메타버스 노선’으로 학습하라: 위기 노드 → 카이로스 순간 → 정의의 방패 → 목표 노드."
+    }
+  },
+  paul: {
+    blocks: [
+      {
+        title:{en:"1) Jewish foundation (Phil 3:5–6)", ko:"1) 유대적 토대(빌 3:5–6)"},
+        body:{
+          en:"Paul’s Jewish identity is constitutive, not incidental (Dunn). Pre-conversion: covenant boundary policing—he saw the Jesus movement as a threat to Israel’s elect status (Acts 8; Gal 1).",
+          ko:"바울의 유대 정체성은 부차적 요소가 아니라 구성적 요소(Dunn)이다. 회심 전: 언약 경계의 ‘보호/단속’—예수 운동을 이스라엘의 선민 정체성에 대한 위협으로 보았다(행 8; 갈 1)."
+        }
+      },
+      {
+        title:{en:"2) Greek fluency (Acts 17; 1 Cor 9)", ko:"2) 헬라 문화의 이중언어 능력(행 17; 고전 9)"},
+        body:{
+          en:"Born in Tarsus; cites Greek poets. He can operate as insider to rhetorical conventions while challenging Greek religious assumptions—code-switching across worlds (Wright).",
+          ko:"다소 출생, 헬라 시인 인용. 수사학 관습에는 내부자처럼 들어가되, 헬라 종교 전제를 비판하는 방식으로 세계를 오가며 코드-스위칭한다(Wright)."
+        }
+      },
+      {
+        title:{en:"3) Roman citizenship (Acts 16; 22; 25)", ko:"3) 로마 시민권(행 16; 22; 25)"},
+        body:{
+          en:"Legal protection and mobility; appeal to Caesar. Yet Paul refuses the imperial cult—‘our citizenship is in heaven’ (Phil 3:20) as a counter-claim.",
+          ko:"법적 보호와 이동성, 황제 상소권. 그러나 황제 숭배는 거부—‘우리의 시민권은 하늘에’(빌 3:20)는 제국 신학에 대한 반(反)주장이다."
+        }
+      },
+      {
+        title:{en:"4) Damascus conversion = direction reversal", ko:"4) 다메섹 회심 = 방향의 전환"},
+        body:{
+          en:"Jesus asks ‘Why are you persecuting me?’ (Acts 9)—a relational/vector question, not ontological essence. Paul’s motion flips: persecutor → persecuted; Torah-boundary insider → Gentile-mission boundary-crosser (Brown).",
+          ko:"예수는 ‘왜 나를 박해하느냐?’(행 9)라고 묻는다—본질(존재론)이 아니라 관계/벡터의 질문. 바울의 운동이 뒤집힌다: 박해자→박해받는 자, 토라 경계 내부자→이방 선교의 경계 횡단자(Brown)."
+        }
+      }
+    ]
+  },
+  sources: {
+    cards: [
+      {
+        title:{en:"Two primary sources", ko:"두 가지 1차 축"},
+        body:{
+          en:"(1) Paul’s letters: firsthand, occasional crisis documents. (2) Acts: Luke’s later theological narrative. A mainstream approach: letters as anchors, Acts as careful supplement where congruent (Brown/Dunn/Wright/Ehrman/Barclay).",
+          ko:"(1) 바울서신: 1인칭·상황적 위기 문서. (2) 사도행전: 누가의 후대 신학적 서사. 주류 접근: 서신을 앵커로, 일치하는 지점에서 행전을 신중히 보조자료로 사용(Brown/Dunn/Wright/Ehrman/Barclay)."
+        }
+      },
+      {
+        title:{en:"Chronology debate (why it matters)", ko:"연대기 논쟁(왜 중요한가)"},
+        body:{
+          en:"Traditional vs revisionist dating compresses or expands Paul’s mission span. Either way, Paul writes with kairos urgency (‘the appointed time has grown short,’ 1 Cor 7:29).",
+          ko:"전통/수정 연대기는 바울 사역 기간을 압축하거나 확장한다. 그러나 공통점은 ‘카이로스 긴박성’(고전 7:29) 속에서 서신이 쓰였다는 점이다."
+        }
+      }
+    ],
+    note:{
+      en:"Pedagogical key: read letters as “formation tools forged in crisis,” not as a complete systematic theology manual.",
+      ko:"교육적 핵심: 서신은 ‘위기 속에서 단련된 형성 도구’이지, 완결된 조직신학 교과서가 아니다."
+    }
+  },
+  glossary: [
+    { term:"δικαιοσύνη θεοῦ (dikaiosynē theou)", gloss:{en:"‘righteousness/justice of God’ (restorative, covenant-fulfilling putting-right power)", ko:"‘하나님의 의/정의’(언약 성취로 세상을 바로잡는 회복적 능력)"} },
+    { term:"ἔργα νόμου (erga nomou)", gloss:{en:"‘works of the law’ (often: boundary markers like circumcision/food/Sabbath)", ko:"‘율법의 행위’(흔히: 할례·음식·안식일 같은 경계 표지)"} },
+    { term:"πίστις Χριστοῦ (pistis Christou)", gloss:{en:"genitive debate: ‘faith in Christ’ vs ‘Christ’s faithfulness’", ko:"속격 논쟁: ‘그리스도를 믿는 믿음’ vs ‘그리스도의 신실함’"} },
+    { term:"ἁρπαγησόμεθα (harpagēsometha)", gloss:{en:"‘we will be caught up’ (1 Thess 4:17)", ko:"‘우리가 끌어올려지리니’(살전 4:17)"} },
+    { term:"ἀπάντησις (apantēsis)", gloss:{en:"‘meeting’ as civic/royal reception (go out to meet, then escort back)", ko:"‘맞이함’(왕의 영접 의례: 나가서 맞아 다시 동행)"} },
+    { term:"εὐσέβεια (eusebeia)", gloss:{en:"‘godliness’ = embodied faithfulness aligned with sound teaching", ko:"‘경건’= 건전한 가르침과 일치하는 ‘몸으로 사는 신실함’"} },
+    { term:"θεόπνευστος (theopneustos)", gloss:{en:"‘God-breathed’ (2 Tim 3:16)", ko:"‘하나님의 숨결로 된’(딤후 3:16)"} },
+    { term:"ἀνάλυσις (analusis)", gloss:{en:"‘departure/unmooring’ (2 Tim 4:6)", ko:"‘떠남/닻을 푸는 것’(딤후 4:6)"} },
+    { term:"ὑγιαίνω (hygiainō)", gloss:{en:"‘healthy/sound’ teaching (Titus 2:1)", ko:"‘건강한/건전한’ 가르침(딛 2:1)"} }
+  ],
+  letters: [
+    {
+      id:"rom",
+      title:{en:"Romans", ko:"로마서"},
+      focus:{en:"Gospel as God’s justice-restoring power", ko:"복음 = 하나님의 정의-회복 능력"},
+      summary:[
+        {en:"Crisis: Jew–Gentile tensions in a mixed church.", ko:"위기: 혼합 공동체 안의 유대인–이방인 긴장."},
+        {en:"Kairos: Rom 1:16–17 (‘power of God… righteousness revealed’).", ko:"카이로스: 롬 1:16–17(‘하나님의 능력… 의가 나타남’)."},
+        {en:"Justice Shield: putting-the-world-right righteousness (Wright’s dynamic reading).", ko:"정의의 방패: ‘세상을 바로잡는’ 역동적 의(라이트 해석)."},
+        {en:"Target: one new humanity glorifying God together (Rom 15:7–13).", ko:"목표: 함께 하나님께 영광 돌리는 ‘한 새 인류’(롬 15:7–13)."}
+      ],
+      quiz: [
+        {
+          q:{en:"In Wright’s reading, δικαιοσύνη θεοῦ in Romans most strongly means…", ko:"라이트의 해석에서 로마서의 δικαιοσύνη θεοῦ는 주로 무엇을 뜻하는가?"},
+          options:[
+            {en:"An abstract divine moral attribute (static ontology)", ko:"추상적 도덕 속성(정태적 존재론)"},
+            {en:"Only God’s faithfulness to ethnic Israel (exclusive)", ko:"민족 이스라엘에만 한정된 언약 신실함"},
+            {en:"God’s restorative justice putting the world right through Messiah (dynamic)", ko:"메시아를 통해 세상을 바로잡는 회복적 정의(역동)"},
+            {en:"A human achievement earned by Torah performance", ko:"율법 수행으로 얻는 인간의 성취"}
+          ],
+          a:2,
+          exp:{en:"Your chapter frames option #3 as the ‘spatial-relational’ reading: covenant faithfulness expressed as restorative justice that creates a unified people.", ko:"본문은 #3을 ‘공간-관계적’ 읽기로 제시한다: 언약 신실함이 회복적 정의로 나타나 유대인/이방인을 하나로 세운다."}
+        },
+        {
+          q:{en:"Romans was written primarily to…", ko:"로마서는 주로 무엇을 위해 기록되었는가?"},
+          options:[
+            {en:"Replace the Gospels with a systematic dogmatics manual", ko:"복음서를 대체하는 조직신학 교과서가 되기 위해"},
+            {en:"Introduce Paul’s gospel and seek support for the Spain mission", ko:"바울의 복음을 소개하고 스페인 선교 지원을 요청하기 위해"},
+            {en:"Announce that Torah has no ethical value at all", ko:"율법의 윤리적 가치가 전혀 없다고 선언하기 위해"},
+            {en:"Condemn all Roman Christians as apostates", ko:"로마 교회를 배교자로 정죄하기 위해"}
+          ],
+          a:1,
+          exp:{en:"Your chapter highlights: Paul had not visited Rome, wrote to introduce himself/the gospel and request support for Spain, and address Jew–Gentile unity.", ko:"본문은 바울이 로마를 방문하지 않았고, 복음 소개+스페인 선교 지원+유대인/이방인 관계를 다루기 위해 썼다고 정리한다."}
+        },
+        {
+          q:{en:"Which route best matches the ‘Metabus movement’ summary of Romans?", ko:"로마서의 ‘메타버스 이동’ 요약에 가장 가까운 경로는?"},
+          options:[
+            {en:"Glory → Wrath → Death → Chaos", ko:"영광 → 진노 → 죽음 → 혼돈"},
+            {en:"Wrath → Righteousness → Peace/Life → Glory", ko:"진노 → 의 → 평화/생명 → 영광"},
+            {en:"Law → Circumcision → Ethnic purity → Heaven escape", ko:"율법 → 할례 → 민족 순수성 → 천상 탈출"},
+            {en:"Myths → Genealogies → Asceticism → Idleness", ko:"신화 → 족보 → 금욕 → 게으름"}
+          ],
+          a:1,
+          exp:{en:"Your table frames Romans as movement from wrath (1:18) to righteousness (3:21), peace/life (5–8), and glory (8:18ff).", ko:"본문 표는 롬 1:18의 진노에서 3:21의 의, 5–8장의 평화/생명, 8장의 영광으로 이동한다고 요약한다."}
+        },
+        {
+          q:{en:"“To the Jew first and also to the Greek” primarily signals…", ko:"“먼저는 유대인에게요 그리고 헬라인에게로다”는 주로 무엇을 시사하는가?"},
+          options:[
+            {en:"Gentiles must become Jews first", ko:"이방인은 먼저 유대인이 되어야 한다"},
+            {en:"Ethnic hierarchy as eternal salvation ranking", ko:"민족 서열이 구원의 영원한 순위다"},
+            {en:"Historical order + inclusive scope of the gospel", ko:"역사적 순서 + 복음의 포괄적 범위"},
+            {en:"Rome is superior to Jerusalem", ko:"로마가 예루살렘보다 우월하다"}
+          ],
+          a:2,
+          exp:{en:"In your synthesis, the phrase holds chronological priority without excluding Gentiles—gospel power is for ‘everyone who believes.’", ko:"본문은 역사적 우선성을 인정하되 배제가 아니라 ‘모든 믿는 자’에게 열린 포괄성을 강조한다."}
+        },
+        {
+          q:{en:"In this chapter’s framing, Romans is NOT best described as…", ko:"이 장의 관점에서 로마서는 다음 중 무엇으로 ‘가장 적절하지 않은가’?"},
+          options:[
+            {en:"A formation route addressing communal tensions", ko:"공동체 긴장을 다루는 형성 경로"},
+            {en:"Occasional theology with a strategic purpose", ko:"전략적 목적을 가진 상황적 신학"},
+            {en:"A complete systematic theology covering every doctrine equally", ko:"모든 교리를 균등하게 다루는 완결된 조직신학"},
+            {en:"A letter that argues for Jew–Gentile unity in Christ", ko:"그리스도 안의 유대인–이방인 연합을 논증하는 서신"}
+          ],
+          a:2,
+          exp:{en:"Your text explicitly notes: Romans is not a full dogmatics manual; it’s strategic, community-forming theology.", ko:"본문은 로마서가 ‘완결된 조직신학’이 아니라 전략적·형성적 서신이라고 분명히 말한다."}
+        }
+      ]
+    },
+
+    {
+      id:"1cor",
+      title:{en:"1 Corinthians", ko:"고린도전서"},
+      focus:{en:"Embodied gospel in a chaotic, multi-ethnic church", ko:"혼돈의 다민족 공동체에 ‘몸으로 사는 복음’"},
+      summary:[
+        {en:"Crisis: factions, sexuality, lawsuits, worship chaos, resurrection denial.", ko:"위기: 분열, 성윤리, 소송, 예배 혼란, 부활 부정."},
+        {en:"Kairos: 1 Cor 15 culminates in 15:58 (‘labor not in vain’).", ko:"카이로스: 고전 15장의 결론 15:58(‘수고가 헛되지 않다’)."},
+        {en:"Justice Shield: love that protects the weak and builds up the body.", ko:"정의의 방패: 약자를 보호하고 몸을 세우는 사랑."},
+        {en:"Target: unified, mature body practicing resurrection-shaped work.", ko:"목표: 부활이 만든 소망으로 ‘신실한 일’을 지속하는 성숙한 공동체."}
+      ],
+      quiz: [
+        {
+          q:{en:"Which set best matches the major crises listed for 1 Corinthians in your chapter?", ko:"본문이 정리한 고린도전서의 주요 위기 묶음에 가장 가까운 것은?"},
+          options:[
+            {en:"Myths, genealogies, forbidding marriage, food abstinence", ko:"신화·족보, 결혼 금지, 음식 금욕"},
+            {en:"Factions, sexual issues, lawsuits, worship chaos, resurrection denial", ko:"분열, 성 문제, 소송, 예배 혼란, 부활 부정"},
+            {en:"Anxiety about the dead, forged letters, idleness", ko:"죽은 자에 대한 불안, 위조 서신, 게으름"},
+            {en:"Circumcision requirement, boundary markers, pistis debate only", ko:"할례 요구, 경계 표지, πίστις 논쟁만"}
+          ],
+          a:1,
+          exp:{en:"Your chapter lists eight problems for Corinth, including factions, sexual immorality, lawsuits, worship disorder, and resurrection denial.", ko:"본문은 분열·성윤리·소송·예배 질서·부활 논쟁 등 ‘여덟 문제’를 중심으로 요약한다."}
+        },
+        {
+          q:{en:"1 Cor 15:58 functions as…", ko:"고전 15:58의 기능은 무엇인가?"},
+          options:[
+            {en:"An escape-from-earth slogan", ko:"땅을 떠나는 ‘탈출’ 구호"},
+            {en:"A conclusion: resurrection makes embodied work meaningful", ko:"결론: 부활이 현재의 ‘몸의 수고’를 의미 있게 한다"},
+            {en:"A rule that cancels all ethics until Christ returns", ko:"재림 전까지 윤리를 무효화하는 규칙"},
+            {en:"A proof that Christians should stop working", ko:"그리스도인은 일하지 말아야 한다는 증거"}
+          ],
+          a:1,
+          exp:{en:"Your text emphasizes: because Christ is raised and new creation has begun, labor ‘in the Lord’ is not in vain.", ko:"본문은 ‘부활과 새 창조’ 때문에 ‘주 안에서’의 수고가 헛되지 않다고 강조한다."}
+        },
+        {
+          q:{en:"In your chapter’s spatial framing, Corinth is best described as…", ko:"본문의 공간-관계적 틀에서 고린도는 어떻게 묘사되는가?"},
+          options:[
+            {en:"Pure Emic-space with no cultural pressures", ko:"문화 압력이 없는 순수 에믹 공간"},
+            {en:"Etic-space with Emic-persons becoming culturally confused at the boundary", ko:"에틱 공간 속에서 경계 혼란을 겪는 에믹 인격들"},
+            {en:"A Jewish synagogue-only environment", ko:"유대 회당만 있는 환경"},
+            {en:"A monastic retreat free from conflict", ko:"갈등 없는 수도원적 은둔지"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: Corinth is pagan/cosmopolitan Etic-space; believers are ‘in Christ’ yet still culturally Corinthian, needing formation wisdom.", ko:"본문: 고린도는 다신교·혼합문화의 에틱 공간. 신자들은 ‘그리스도 안’에 있으나 문화적으로는 고린도인이라 지혜로 형성되어야 한다."}
+        },
+        {
+          q:{en:"The slang ‘to Corinthianize’ (κορινθιάζομαι) is used to evoke…", ko:"‘고린도인처럼 살다’(κορινθιάζομαι)라는 표현이 환기하는 것은?"},
+          options:[
+            {en:"Rigorous ascetic purity", ko:"엄격한 금욕적 순결"},
+            {en:"Sexual immorality / permissive reputation", ko:"성적 방종/문란한 평판"},
+            {en:"Royal reception ceremony", ko:"왕의 영접 의례"},
+            {en:"Covenant boundary policing", ko:"언약 경계 단속"}
+          ],
+          a:1,
+          exp:{en:"Your chapter uses the term to highlight Corinth’s permissive moral reputation and the embodied ethical crisis in the church.", ko:"본문은 이 표현으로 고린도의 방종한 평판과 교회의 ‘몸의 윤리’ 위기를 부각한다."}
+        },
+        {
+          q:{en:"According to your chapter, Paul’s aim in Corinth is mainly to…", ko:"본문에 따르면 바울이 고린도에서 주로 겨냥한 것은?"},
+          options:[
+            {en:"Impose rules without discernment", ko:"분별 없이 규칙만 강요하기"},
+            {en:"Form wisdom: what builds up and protects the vulnerable", ko:"지혜 형성: 무엇이 공동체를 세우고 약자를 보호하는가"},
+            {en:"Replace the Spirit’s gifts with legalism", ko:"성령의 은사를 율법주의로 대체하기"},
+            {en:"End all community life and meet privately only", ko:"공동체 삶을 중단하고 개인 신앙만 유지하기"}
+          ],
+          a:1,
+          exp:{en:"Your text frames Paul as forming communal discernment—edification, protection of the weak, resurrection-shaped witness.", ko:"본문은 바울이 ‘공동체적 분별’(세움/약자 보호/부활 증언)을 형성한다고 요약한다."}
+        }
+      ]
+    },
+
+    {
+      id:"2cor",
+      title:{en:"2 Corinthians", ko:"고린도후서"},
+      focus:{en:"Cruciform leadership: power perfected in weakness", ko:"십자가형 리더십: 약함 속의 능력"},
+      summary:[
+        {en:"Crisis: authority contested; ‘super-apostles’ comparisons.", ko:"위기: 권위 논쟁, ‘슈퍼-사도’ 비교."},
+        {en:"Kairos: 2 Cor 12:9 (‘grace sufficient; power in weakness’).", ko:"카이로스: 고후 12:9(‘은혜가 족하다; 약함 속 능력’)."},
+        {en:"Justice Shield: vulnerability counters domination and spiritual performance.", ko:"정의의 방패: 취약성/투명성이 지배·과시를 막는다."},
+        {en:"Target: reconciled, grace-formed community.", ko:"목표: 은혜로 형성된 화해 공동체."}
+      ],
+      quiz: [
+        {
+          q:{en:"2 Cor 12:9 is used in your chapter to teach that…", ko:"본문에서 고후 12:9는 무엇을 가르치는 핵심 본문인가?"},
+          options:[
+            {en:"God’s power eliminates weakness immediately", ko:"하나님의 능력은 약함을 즉시 제거한다"},
+            {en:"Grace is enough; power is perfected in weakness", ko:"은혜는 충분하며 능력은 약함 속에서 온전해진다"},
+            {en:"True apostles never suffer", ko:"참 사도는 고난이 없다"},
+            {en:"Spiritual status is proven by public charisma", ko:"영적 지위는 카리스마로 증명된다"}
+          ],
+          a:1,
+          exp:{en:"Your chapter centers cruciform leadership: not dominance, but dependence on grace—exactly where Christ’s power ‘rests.’", ko:"본문은 십자가형 리더십을 강조한다: 지배가 아니라 은혜 의존—그 자리에 그리스도의 능력이 ‘머문다’."}
+        },
+        {
+          q:{en:"Your chapter notes a common scholarly view that 2 Corinthians is…", ko:"본문이 언급하는 고린도후서에 대한 대표적 학자 견해는?"},
+          options:[
+            {en:"A single uninterrupted letter with no complexity", ko:"중단 없는 단일 서신으로 복잡성이 없다"},
+            {en:"A composite of multiple letter fragments", ko:"여러 서신 조각이 합쳐진 ‘복합체’"},
+            {en:"A gospel narrative like Mark", ko:"마가복음 같은 복음서 서사"},
+            {en:"A legal code written for Roman courts", ko:"로마 법정을 위한 법전"}
+          ],
+          a:1,
+          exp:{en:"Your text summarizes a composite hypothesis (different sections reflecting different conflict stages), while focusing on formation outcomes.", ko:"본문은 복합서신 가설(갈등 단계별 조각)을 요약하면서도 형성 목적에 초점을 둔다."}
+        },
+        {
+          q:{en:"The ‘thorn in the flesh’ (2 Cor 12:7) is described as…", ko:"‘육체의 가시’(고후 12:7)는 본문에서 어떻게 설명되는가?"},
+          options:[
+            {en:"A clearly identified illness with medical certainty", ko:"의학적으로 확정된 특정 질병"},
+            {en:"A debated mystery (ailment/spiritual warfare/persecution, etc.)", ko:"논쟁적 미스터리(질병/영적 전쟁/박해 등)"},
+            {en:"A metaphor for being rich", ko:"부유함의 은유"},
+            {en:"A command to stop praying", ko:"기도를 멈추라는 명령"}
+          ],
+          a:1,
+          exp:{en:"Your chapter explicitly notes scholarly debate about what the ‘thorn’ was; the point is God’s answer about grace.", ko:"본문은 ‘가시’의 정체에 학계 논쟁이 있음을 말하며, 핵심은 ‘은혜가 족하다’는 응답이라고 한다."}
+        },
+        {
+          q:{en:"In your chapter, Paul’s ‘counter-boast’ opposes…", ko:"본문에서 바울의 ‘역-자랑’이 반대하는 대상은?"},
+          options:[
+            {en:"The poor and vulnerable", ko:"가난한 자와 약자"},
+            {en:"Flashy ‘super-apostles’ boasting of spiritual prowess", ko:"영적 과시로 자랑하는 ‘슈퍼-사도’"},
+            {en:"The resurrection hope", ko:"부활 소망"},
+            {en:"Any form of mentoring leadership", ko:"모든 형태의 멘토링 리더십"}
+          ],
+          a:1,
+          exp:{en:"Your synthesis highlights how weakness/vulnerability protects the community from domination and performance-based authority.", ko:"본문 요약은 약함/취약성이 공동체를 지배와 과시적 권위로부터 보호한다고 말한다."}
+        },
+        {
+          q:{en:"Which chapters are highlighted as collection appeals in your chapter’s outline?", ko:"본문에서 ‘연보(예루살렘 구제)’ 호소로 강조되는 장은?"},
+          options:[
+            {en:"2 Corinthians 8–9", ko:"고린도후서 8–9장"},
+            {en:"2 Corinthians 1–2 only", ko:"고후 1–2장만"},
+            {en:"2 Corinthians 14–15", ko:"고후 14–15장"},
+            {en:"2 Corinthians has no collection material", ko:"고후에는 연보 내용이 없다"}
+          ],
+          a:0,
+          exp:{en:"Your chapter notes 8–9 as collection appeals (with discussion of possible insertions/fragments).", ko:"본문은 8–9장을 연보 호소로 정리한다(삽입/조각 가능성도 언급)." }
+        }
+      ]
+    },
+
+    {
+      id:"gal",
+      title:{en:"Galatians", ko:"갈라디아서"},
+      focus:{en:"Boundary war: faith/Spirit vs identity markers", ko:"경계 전쟁: 믿음/성령 vs 정체성 표지"},
+      summary:[
+        {en:"Crisis: Gentiles pressured to adopt circumcision and Torah boundary markers.", ko:"위기: 이방인에게 할례 및 토라 경계 표지를 요구."},
+        {en:"Kairos: Gal 2:16 (justification not by works of law).", ko:"카이로스: 갈 2:16(율법 행위가 아닌 믿음으로 의롭다 함)."},
+        {en:"Justice Shield: gospel protects Gentile inclusion; freedom in Christ (5:1).", ko:"정의의 방패: 복음이 이방인 포용을 보호; 그리스도 안의 자유(5:1)."},
+        {en:"Target: Spirit-led new creation community (3:28; 6:15).", ko:"목표: 성령을 따라 걷는 새 창조 공동체(3:28; 6:15)."}
+      ],
+      quiz: [
+        {
+          q:{en:"In your chapter’s summary, the Galatian crisis was primarily…", ko:"본문 요약에서 갈라디아서의 위기 핵심은?"},
+          options:[
+            {en:"Fear about deceased believers missing the Parousia", ko:"죽은 신자가 재림을 놓칠까 두려움"},
+            {en:"Pressure to circumcise Gentiles to belong fully to God’s people", ko:"이방인이 하나님의 백성에 온전히 속하려면 할례해야 한다는 압박"},
+            {en:"A forged letter claiming the Day already came", ko:"‘주의 날이 이미 왔다’는 위조 서신"},
+            {en:"Widow-roll budgeting conflict", ko:"과부 명부 예산 갈등"}
+          ],
+          a:1,
+          exp:{en:"Your chapter frames Galatians as the ‘ultimate boundary war’ over circumcision/Torah as inclusion markers.", ko:"본문은 갈라디아서를 ‘궁극의 경계 전쟁’(할례/율법을 포용 표지로 삼는 문제)으로 정리한다."}
+        },
+        {
+          q:{en:"In the New Perspective framing used in your chapter, ‘works of the law’ (ἔργα νόμου) most closely means…", ko:"본문이 사용하는 ‘새 관점’ 틀에서 ἔργα νόμου(율법의 행위)는 주로 무엇을 뜻하는가?"},
+          options:[
+            {en:"Good deeds in general (charity)", ko:"일반적 선행(자선)"},
+            {en:"Boundary markers distinguishing Jews from Gentiles", ko:"유대인과 이방인을 구분하는 경계 표지"},
+            {en:"Mystical experiences and visions", ko:"신비 체험과 환상"},
+            {en:"Roman legal citizenship", ko:"로마 시민권"}
+          ],
+          a:1,
+          exp:{en:"Your chapter follows Sanders/Dunn/Wright: ‘works of the law’ often refers to identity markers (circumcision/food/Sabbath), not generic moral effort.", ko:"본문은 Sanders/Dunn/Wright 흐름을 따라 ‘율법의 행위’를 정체성 표지(할례/음식/안식일)로 설명한다."}
+        },
+        {
+          q:{en:"Gal 2:16 is used to teach that justification is…", ko:"갈 2:16은 의롭다 함을 무엇으로 가르치는가?"},
+          options:[
+            {en:"By ethnic descent from Abraham", ko:"아브라함 혈통으로"},
+            {en:"By works of the law", ko:"율법의 행위로"},
+            {en:"Through faith in / faithfulness of Jesus Christ (debated genitive)", ko:"예수 그리스도에 대한 믿음/그의 신실함(속격 논쟁 포함)으로"},
+            {en:"By imperial loyalty to Caesar", ko:"가이사에 대한 충성으로"}
+          ],
+          a:2,
+          exp:{en:"Your chapter notes the pistis Christou debate, but the point remains: Torah boundary markers are not the badge of covenant membership.", ko:"본문은 πίστις Χριστοῦ 논쟁을 언급하되, 핵심은 ‘율법 경계 표지’가 언약 가족의 표지가 아니라는 것이다."}
+        },
+        {
+          q:{en:"Which option best reflects your chapter’s ‘pistis Christou’ tension?", ko:"본문이 제시한 πίστις Χριστοῦ 긴장 구조에 가장 가까운 것은?"},
+          options:[
+            {en:"Only our subjective faith matters; Christ’s obedience is irrelevant", ko:"우리의 주관적 믿음만 중요하며 그리스도의 순종은 무관하다"},
+            {en:"Only Christ’s faithfulness matters; our faith-response is unnecessary", ko:"그리스도의 신실함만 중요하며 우리의 믿음 반응은 불필요하다"},
+            {en:"Christ’s faithfulness grounds salvation; our faith responds—both in view", ko:"그리스도의 신실함이 구원을 가능케 하고, 우리는 믿음으로 응답—둘 다 고려"},
+            {en:"The phrase means ‘faith in Torah’", ko:"그 표현은 ‘율법에 대한 믿음’이다"}
+          ],
+          a:2,
+          exp:{en:"Your chapter holds the tension: Christ’s self-giving faithfulness is primary, and believers respond with faith—vector movement toward God.", ko:"본문은 ‘신실함이 1차, 믿음이 응답’이라는 긴장을 유지하며 하나님을 향한 벡터 운동으로 읽는다."}
+        },
+        {
+          q:{en:"Which is NOT one of the six argument types your chapter lists for Galatians 3–4?", ko:"본문이 정리한 갈 3–4장의 ‘여섯 논증’에 포함되지 않는 것은?"},
+          options:[
+            {en:"Experiential", ko:"경험 논증"},
+            {en:"Abraham", ko:"아브라함 논증"},
+            {en:"Adoption (huiothesia)", ko:"양자(υἱοθεσία) 논증"},
+            {en:"Royal reception (apantēsis)", ko:"왕의 영접(apantēsis) 논증"}
+          ],
+          a:3,
+          exp:{en:"Your chapter lists: experiential, Abraham, legal/covenant, adoption, personal, allegorical—‘apantēsis’ is tied to 1 Thess 4, not Galatians.", ko:"본문의 여섯 논증은 경험·아브라함·법적·양자·개인적·알레고리. apantēsis는 살전 4의 ‘영접’ 맥락이다."}
+        }
+      ]
+    },
+
+    {
+      id:"1thess",
+      title:{en:"1 Thessalonians", ko:"데살로니가전서"},
+      focus:{en:"From grief-anxiety to hope-stability", ko:"애도 불안 → 소망 안정"},
+      summary:[
+        {en:"Crisis: grief and fear that deceased believers ‘missed’ the Parousia.", ko:"위기: 죽은 신자들이 재림을 놓쳤을까 두려움."},
+        {en:"Kairos: 1 Thess 4:13–18 (‘dead in Christ rise first’).", ko:"카이로스: 살전 4:13–18(‘그리스도 안에서 죽은 자가 먼저 일어난다’)."},
+        {en:"Justice Shield: hope that prevents despair and stabilizes vulnerable believers.", ko:"정의의 방패: 절망을 막고 취약한 신자를 안정시키는 소망."},
+        {en:"Target: active encouragement + faithful work in daily life (4:18; 4:11).", ko:"목표: 서로 격려 + 일상에서 신실한 삶(4:18; 4:11)." }
+      ],
+      quiz: [
+        {
+          q:{en:"Your chapter dates 1 Thessalonians to…", ko:"본문은 데살로니가전서를 언제로 연대하는가?"},
+          options:[
+            {en:"AD 20–25", ko:"AD 20–25"},
+            {en:"AD 50–51 (broad consensus; Brown)", ko:"AD 50–51(대체로 합의; Brown)"},
+            {en:"AD 90–100", ko:"AD 90–100"},
+            {en:"AD 140–150", ko:"AD 140–150"}
+          ],
+          a:1,
+          exp:{en:"Your chapter cites Brown: earliest NT writing likely 1 Thess, ca. AD 50–51.", ko:"본문은 Brown을 따라 살전이 AD 50–51 경의 초기 문서라고 말한다."}
+        },
+        {
+          q:{en:"The specific anxiety in 1 Thess 4:13 is about…", ko:"살전 4:13의 구체적 불안은 무엇인가?"},
+          options:[
+            {en:"Whether Gentiles must be circumcised", ko:"이방인이 할례해야 하는가"},
+            {en:"Whether dead believers will be excluded at Christ’s coming", ko:"죽은 신자들이 주의 오심에서 제외되는가"},
+            {en:"How to enroll widows on a roll", ko:"과부 명부를 어떻게 운영하는가"},
+            {en:"Which foods are healthy teaching", ko:"어떤 음식이 ‘건전한 가르침’인가"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: the community panicked that the deceased might have ‘missed it’; Paul comforts: the dead rise first.", ko:"본문: 죽은 자가 ‘놓쳤을까’ 패닉; 바울은 ‘죽은 자가 먼저’로 위로한다."}
+        },
+        {
+          q:{en:"ἁρπαγησόμεθα (1 Thess 4:17) most directly means…", ko:"ἁρπαγησόμεθα(살전 4:17)는 직접적으로 무엇을 뜻하는가?"},
+          options:[
+            {en:"We will be morally improved", ko:"도덕적으로 개선된다"},
+            {en:"We will be caught up / seized", ko:"붙들려(끌어올려) 올라간다"},
+            {en:"We will write a forged letter", ko:"위조 서신을 쓴다"},
+            {en:"We will abolish work", ko:"노동을 폐지한다"}
+          ],
+          a:1,
+          exp:{en:"Your chapter glosses it as ‘we will be caught up’ (Latin rapio → later ‘rapture’ vocabulary).", ko:"본문은 ‘끌어올려짐’으로 풀이하며(라틴 rapio → 후대 ‘rapture’ 어휘) 설명한다."}
+        },
+        {
+          q:{en:"Your chapter emphasizes that εἰς ἀπάντησιν (‘to meet’) implies…", ko:"본문은 εἰς ἀπάντησιν(‘맞이하러’)이 무엇을 함축한다고 강조하는가?"},
+          options:[
+            {en:"A secret escape from earth", ko:"지구로부터의 비밀 탈출"},
+            {en:"A royal reception: meet and escort the King back", ko:"왕의 영접: 맞이하고 왕을 동행하여 돌아옴"},
+            {en:"A monastic retreat in Arabia", ko:"아라비아의 수도원적 은둔"},
+            {en:"A courtroom appeal to Caesar", ko:"법정에서 황제 상소"}
+          ],
+          a:1,
+          exp:{en:"Following Wright (and echoed by Ehrman in your chapter), apantēsis is a technical civic welcome term—meet then escort, not escape.", ko:"본문은 Wright(그리고 Ehrman의 유사 주장)를 따라 apantēsis를 ‘영접’ 기술어로 본다: 탈출이 아니라 맞이 후 동행."}
+        },
+        {
+          q:{en:"A recurring structural feature of 1 Thess noted in your chapter is…", ko:"본문이 언급한 살전의 반복 구조 특징은?"},
+          options:[
+            {en:"Every chapter ends with a Parousia reference", ko:"각 장이 재림(Parousia) 언급으로 끝난다"},
+            {en:"Every chapter is a legal appeal to Caesar", ko:"각 장이 황제 상소로 끝난다"},
+            {en:"Every chapter forbids marriage", ko:"각 장이 결혼을 금지한다"},
+            {en:"Every chapter is written in Greek poetry", ko:"각 장이 헬라 시로 쓰였다"}
+          ],
+          a:0,
+          exp:{en:"Your chapter lists Parousia references at the end of each chapter (1:10; 2:19; 3:13; 4:15; 5:23).", ko:"본문은 각 장 말미의 Parousia 언급을 열거한다(1:10; 2:19; 3:13; 4:15; 5:23)." }
+        }
+      ]
+    },
+
+    {
+      id:"2thess",
+      title:{en:"2 Thessalonians", ko:"데살로니가후서"},
+      focus:{en:"From eschatological confusion to steady work", ko:"종말 혼란 → 신실한 일상"},
+      summary:[
+        {en:"Crisis: claim that ‘the Day has already come’ → alarm and idleness.", ko:"위기: ‘주의 날이 이미 왔다’ 주장 → 동요와 게으름."},
+        {en:"Kairos: stand firm; don’t grow weary (2:15; 3:13).", ko:"카이로스: 굳게 서라; 선을 행하다 낙심치 말라(2:15; 3:13)."},
+        {en:"Justice Shield: ‘not willing to work, let him not eat’ protects communal mutual aid.", ko:"정의의 방패: ‘일하기 싫거든 먹지도 말라’는 상호부조 시스템을 보호."},
+        {en:"Target: stable community with urgency without irresponsibility.", ko:"목표: 무책임 없는 긴박성, 안정된 공동체."}
+      ],
+      quiz: [
+        {
+          q:{en:"In your chapter, the main problem addressed in 2 Thessalonians is…", ko:"본문에 따르면 데후의 핵심 문제는?"},
+          options:[
+            {en:"Circumcision as covenant membership badge", ko:"할례가 언약 소속의 표지인가"},
+            {en:"Claim that the Day has already come, causing alarm and idleness", ko:"주의 날이 이미 왔다는 주장으로 인한 동요와 게으름"},
+            {en:"Denial of resurrection in Corinth", ko:"고린도에서의 부활 부정"},
+            {en:"A debate about ‘righteousness of God’ in Rome", ko:"로마서 ‘하나님의 의’ 논쟁"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: after 1 Thess, a report/letter claimed the Day had come (2:2), leading some to quit work (3:6–12).", ko:"본문: 데후 2:2의 주장(보고/서신) 때문에 일 그만두는 문제가 발생(3:6–12)." }
+        },
+        {
+          q:{en:"Which pair is highlighted as core texts in your chapter?", ko:"본문이 ‘핵심 본문’으로 강조한 짝은?"},
+          options:[
+            {en:"2 Thess 2:15 and 3:10/3:13", ko:"데후 2:15 및 3:10/3:13"},
+            {en:"2 Thess 1:1 and 1:2 only", ko:"데후 1:1과 1:2만"},
+            {en:"2 Thess 4:13–18", ko:"데후 4:13–18"},
+            {en:"2 Thess 12:9", ko:"데후 12:9"}
+          ],
+          a:0,
+          exp:{en:"Your chapter foregrounds: ‘stand firm’ (2:15), ‘if not willing to work, let him not eat’ (3:10), and ‘do not grow weary’ (3:13).", ko:"본문은 2:15, 3:10, 3:13을 중심으로 제시한다."}
+        },
+        {
+          q:{en:"Your chapter treats the command ‘if anyone is not willing to work…’ primarily as…", ko:"본문은 ‘일하기 싫거든 먹지도 말라’(3:10)를 주로 무엇으로 해석하는가?"},
+          options:[
+            {en:"Capitalist bootstrapping ideology", ko:"자수성가식 자본주의 이데올로기"},
+            {en:"A justice protection against exploiting communal generosity", ko:"공동체의 나눔을 착취하지 못하게 하는 정의의 보호장치"},
+            {en:"A ban on helping the poor", ko:"가난한 자를 돕지 말라는 금지"},
+            {en:"A rule for Roman taxation", ko:"로마 세금 규정"}
+          ],
+          a:1,
+          exp:{en:"Your chapter (via Ehrman) frames it as covenant reciprocity protecting the poor and the mutual aid system from freeloading.", ko:"본문은(Ehrman을 따라) 상호부조를 악용하는 ‘자발적 무임승차’를 막아 취약자를 보호하는 장치로 설명한다."}
+        },
+        {
+          q:{en:"Your chapter notes an authorship debate for 2 Thessalonians as…", ko:"본문이 언급한 데후 저자 논쟁은?"},
+          options:[
+            {en:"No debate exists; everyone agrees it is pseudonymous", ko:"논쟁이 없고 모두 위작이라고 합의"},
+            {en:"Majority doubts Pauline authorship, minority still defends it (Brown’s verdict)", ko:"다수는 바울 저작을 의심하나 소수는 방어 가능(Brown)"},
+            {en:"Everyone agrees Paul wrote it and it is never questioned", ko:"모두 바울 저작으로 확신하며 질문이 없다"},
+            {en:"It was written in Hebrew, not Greek", ko:"헬라어가 아닌 히브리어로 기록"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: Brown notes majority skepticism, minority defensibility; you adopt Pauline authorship for pedagogical coherence while acknowledging debate.", ko:"본문: Brown은 다수 회의/소수 방어를 언급. 본문은 교육적 일관성을 위해 바울 저작으로 채택하되 논쟁을 인정한다."}
+        },
+        {
+          q:{en:"2 Thess 2:2 mentions deception possibly via…", ko:"데후 2:2는 어떤 경로의 미혹 가능성을 언급하는가?"},
+          options:[
+            {en:"A spirit, a spoken word, or a letter seeming to be from us", ko:"영, 말, 혹은 우리에게서 온 것처럼 보이는 편지"},
+            {en:"A Roman census document", ko:"로마 인구조사 문서"},
+            {en:"A synagogue seating chart", ko:"회당 좌석표"},
+            {en:"A poetry anthology from Aratus", ko:"아라투스 시집"}
+          ],
+          a:0,
+          exp:{en:"Your chapter quotes 2 Thess 2:2’s triad (spirit/word/letter) as the confusion channel.", ko:"본문은 2:2의 세 경로(영/말/편지)를 혼란의 통로로 제시한다."}
+        }
+      ]
+    },
+
+    {
+      id:"1tim",
+      title:{en:"1 Timothy", ko:"디모데전서"},
+      focus:{en:"From structural chaos to protected order", ko:"구조적 혼란 → 보호된 질서"},
+      summary:[
+        {en:"Crisis: false teaching and disordered community life in Ephesus.", ko:"위기: 에베소의 거짓 가르침과 공동체 혼란."},
+        {en:"Kairos: watch life and doctrine; persist (4:16).", ko:"카이로스: 삶과 가르침을 살피라(4:16)."},
+        {en:"Justice Shield: qualified elders and wise care structures protect the vulnerable.", ko:"정의의 방패: 자격 있는 장로/돌봄 구조가 취약자를 보호."},
+        {en:"Target: sound-doctrine, stable community.", ko:"목표: 건전한 교훈의 안정 공동체."}
+      ],
+      quiz: [
+        {
+          q:{en:"Your chapter describes the Ephesian false teaching in 1 Timothy as including…", ko:"본문은 딤전의 거짓 가르침에 무엇이 포함된다고 말하는가?"},
+          options:[
+            {en:"Myths and endless genealogies; forbidding marriage; abstaining from foods", ko:"신화와 끝없는 족보; 결혼 금지; 음식 금욕"},
+            {en:"A claim that Caesar is Messiah", ko:"가이사가 메시아라는 주장"},
+            {en:"A denial that Paul is Jewish", ko:"바울이 유대인이 아니라는 부정"},
+            {en:"A command to stop appointing leaders", ko:"리더 임명을 중단하라는 명령"}
+          ],
+          a:0,
+          exp:{en:"Your chapter lists: myths/genealogies (1:4), forbidding marriage and foods (4:3), and overrealized resurrection claims (linked in 2 Tim 2:18).", ko:"본문은 1:4, 4:3 등을 요약하며 과도한 종말론(딤후 2:18)과 연결한다."}
+        },
+        {
+          q:{en:"1 Tim 4:16 commands Timothy to…", ko:"딤전 4:16은 디모데에게 무엇을 명령하는가?"},
+          options:[
+            {en:"Focus on charisma only", ko:"카리스마만 추구하라"},
+            {en:"Keep close watch on yourself and the teaching; persist", ko:"자신과 가르침을 살피고 이를 계속하라"},
+            {en:"Withdraw from the community", ko:"공동체에서 철수하라"},
+            {en:"Stop teaching Scripture", ko:"성경 가르침을 중단하라"}
+          ],
+          a:1,
+          exp:{en:"Your chapter treats 4:16 as a formation hinge: personal life + doctrine together, sustained over time.", ko:"본문은 4:16을 ‘삶+교훈’의 결합과 지속이라는 형성의 경첩으로 다룬다."}
+        },
+        {
+          q:{en:"εὐσέβεια (eusebeia) is explained in your chapter as…", ko:"본문에서 εὐσέβεια(경건)는 어떻게 설명되는가?"},
+          options:[
+            {en:"Mystical spirituality detached from daily life", ko:"일상과 분리된 신비 영성"},
+            {en:"Embodied faithfulness aligned with sound doctrine", ko:"건전한 교훈과 일치하는 ‘몸의 신실함’"},
+            {en:"A Roman legal status", ko:"로마 법적 신분"},
+            {en:"A synonym for circumcision", ko:"할례의 동의어"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: not mystical piety—‘godliness’ is everyday embodied faithfulness shaped by sound teaching.", ko:"본문: 경건은 신비주의적 경건이 아니라 ‘일상 속 신실함’(건전한 교훈과 정렬)이다."}
+        },
+        {
+          q:{en:"In elder qualifications (1 Tim 3), your chapter notes the only explicit skill requirement is…", ko:"딤전 3장의 장로 자격에서 본문이 ‘유일한 기술(역량) 요건’으로 강조한 것은?"},
+          options:[
+            {en:"Wealth management", ko:"재정 운용 능력"},
+            {en:"Able to teach (διδακτικός)", ko:"가르치기를 잘하는 것(διδακτικός)"},
+            {en:"Greek poetry composition", ko:"헬라 시 창작"},
+            {en:"Roman citizenship", ko:"로마 시민권"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: ‘able to teach’ is the sole skill-based requirement; the rest are character-based safeguards.", ko:"본문: ‘가르치기를 잘함’이 유일한 기술 요건이며 나머지는 인격 기반 보호장치다."}
+        },
+        {
+          q:{en:"Your chapter frames the widow instructions (1 Tim 5) primarily as…", ko:"본문은 딤전 5장의 과부 지침을 주로 어떻게 이해하는가?"},
+          options:[
+            {en:"A timeless condemnation of all younger women", ko:"젊은 여성을 전면 정죄하는 영원 규정"},
+            {en:"A justice dilemma: protecting the most vulnerable under limited resources", ko:"정의의 딜레마: 제한된 자원 속 최취약자를 보호"},
+            {en:"A command to abolish mutual aid", ko:"상호부조 폐지 명령"},
+            {en:"A proof that the church should never budget", ko:"교회 예산을 세우면 안 된다는 증거"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: whatever the authorship stance, the logic aims to protect ‘real widows’ and prevent exploitation/bankruptcy of aid systems.", ko:"본문: 저자 논쟁과 별개로, ‘참 과부’ 보호와 상호부조 시스템의 악용/고갈 방지가 핵심이다."}
+        }
+      ]
+    },
+
+    {
+      id:"2tim",
+      title:{en:"2 Timothy", ko:"디모데후서"},
+      focus:{en:"Succession: entrust across generations", ko:"계승: 세대 간 위탁"},
+      summary:[
+        {en:"Crisis: Paul faces death; Timothy needs courage and continuity.", ko:"위기: 바울의 죽음 앞에서 디모데의 두려움/지속 과제."},
+        {en:"Kairos: 2 Tim 2:2 (entrust to faithful people who teach others).", ko:"카이로스: 딤후 2:2(신실한 사람들에게 맡겨 또 가르치게)."},
+        {en:"Justice Shield: Scripture equips for good works (3:16–17).", ko:"정의의 방패: 성경은 선한 일을 위해 사람을 갖추게 한다(3:16–17)."},
+        {en:"Target: self-reproducing, mission-continuing community (S4→S5).", ko:"목표: 스스로 재생산하며 사명을 지속하는 공동체(S4→S5)." }
+      ],
+      quiz: [
+        {
+          q:{en:"2 Tim 2:2 is summarized in your chapter as…", ko:"딤후 2:2는 본문에서 어떻게 요약되는가?"},
+          options:[
+            {en:"A private mystical mantra", ko:"개인 신비 주문"},
+            {en:"A four-generation transmission model (Paul → Timothy → faithful people → others)", ko:"4세대 전수 모델(바울→디모데→신실한 사람들→또 다른 이들)"},
+            {en:"A command to stop teaching", ko:"가르침 중단 명령"},
+            {en:"A rule about Roman roads", ko:"로마 도로 규칙"}
+          ],
+          a:1,
+          exp:{en:"Your chapter explicitly maps 2 Tim 2:2 into four generations and uses it as the thesis for sustainable succession.", ko:"본문은 2:2를 네 세대로 구조화하며 지속 가능한 계승의 논제로 삼는다."}
+        },
+        {
+          q:{en:"θεόπνευστος (2 Tim 3:16) means…", ko:"θεόπνευστος(딤후 3:16)의 의미는?"},
+          options:[
+            {en:"Human-authored folklore", ko:"인간이 만든 민간 설화"},
+            {en:"God-breathed", ko:"하나님의 숨결로 된"},
+            {en:"Politically approved", ko:"정치적으로 승인된"},
+            {en:"Secretly coded by Rome", ko:"로마가 암호화한"}
+          ],
+          a:1,
+          exp:{en:"Your chapter glosses theopneustos as ‘God-breathed’ and links it to equipping for good works.", ko:"본문은 ‘하나님의 숨결’로 풀이하며 ‘선한 일’의 준비와 연결한다."}
+        },
+        {
+          q:{en:"Your chapter notes that ‘all Scripture’ in 2 Tim 3:16 most directly referred to…", ko:"본문에 따르면 딤후 3:16의 ‘모든 성경’은 당시 직접적으로 무엇을 가리켰는가?"},
+          options:[
+            {en:"Only Paul’s personal letters", ko:"바울 개인 서신만"},
+            {en:"The Hebrew Bible / Old Testament (NT canon not finalized yet)", ko:"히브리 성경/구약(신약 정경은 미완)"},
+            {en:"A Roman legal codex", ko:"로마 법전"},
+            {en:"Greek poetry collections", ko:"헬라 시집"}
+          ],
+          a:1,
+          exp:{en:"Your chapter (via Brown) states: at the time, ‘Scripture’ meant the Hebrew Bible, though the principle extends canonically.", ko:"본문(Brown)은 당시 ‘성경’이 히브리 성경을 뜻했으나 원리는 정경 전체에 적용된다고 말한다."}
+        },
+        {
+          q:{en:"2 Tim 4:6 uses ἀνάλυσις (analusis) to picture Paul’s…", ko:"딤후 4:6의 ἀνάλυσις(analusis)는 바울의 무엇을 묘사하는가?"},
+          options:[
+            {en:"Political promotion", ko:"정치적 승진"},
+            {en:"Departure as ‘unmooring’ (casting off)", ko:"‘닻을 푸는’ 떠남"},
+            {en:"Academic tenure", ko:"학문적 테뉴어"},
+            {en:"A business investment plan", ko:"사업 투자 계획"}
+          ],
+          a:1,
+          exp:{en:"Your chapter notes the image: departure/unmooring—fitting Paul’s testament tone.", ko:"본문은 ‘닻을 푸는 떠남’ 이미지로 설명하며 유언적 분위기와 연결한다."}
+        },
+        {
+          q:{en:"Your chapter’s emic reading says Scripture is primarily…", ko:"본문의 에믹 읽기에서 성경은 주로 무엇인가?"},
+          options:[
+            {en:"A textbook to master for status", ko:"지위 획득을 위한 교과서"},
+            {en:"A formation tool that equips for just ‘good works’", ko:"정의로운 ‘선한 일’을 위해 사람을 형성/준비시키는 도구"},
+            {en:"A codebook for secret predictions only", ko:"비밀 예측만을 위한 암호책"},
+            {en:"A replacement for community life", ko:"공동체 삶의 대체물"}
+          ],
+          a:1,
+          exp:{en:"Your chapter repeatedly ties Scripture to formation and justice: training, correction, and equipping for embodied good works.", ko:"본문은 성경을 형성과 정의의 관점에서 반복적으로 연결한다: 훈련/교정/선한 일을 위한 갖춤."}
+        }
+      ]
+    },
+
+    {
+      id:"titus",
+      title:{en:"Titus", ko:"디도서"},
+      focus:{en:"Healthy teaching as a justice shield in a ‘lying’ culture", ko:"‘거짓’ 문화 속 건강한 교훈 = 정의의 방패"},
+      summary:[
+        {en:"Crisis: cultural chaos; need local elders and sound teaching.", ko:"위기: 문화적 혼돈; 지역 장로와 건전한 교훈 필요."},
+        {en:"Kairos: teach what accords with ‘healthy’ doctrine (2:1).", ko:"카이로스: ‘건강한’ 교훈에 합당한 것을 가르치라(2:1)."},
+        {en:"Justice Shield: doctrine protects people from harm (exploitation, abuse, lies).", ko:"정의의 방패: 교훈은 착취/학대/거짓으로부터 사람을 보호."},
+        {en:"Target: ordered, counter-cultural community in households and towns.", ko:"목표: 가정과 성읍에서 대항문화적 질서 공동체."}
+      ],
+      quiz: [
+        {
+          q:{en:"Titus 1:5 summarizes Titus’s task as…", ko:"딛 1:5는 디도의 과업을 무엇으로 요약하는가?"},
+          options:[
+            {en:"Write a Gospel narrative", ko:"복음서 서사를 쓰라"},
+            {en:"Put what remained into order and appoint elders in every town", ko:"남은 일을 정리하고 각 성읍에 장로를 세우라"},
+            {en:"Stop appointing leaders to avoid conflict", ko:"갈등을 피하려고 리더를 세우지 말라"},
+            {en:"Move everyone to Rome immediately", ko:"모두를 즉시 로마로 이주시켜라"}
+          ],
+          a:1,
+          exp:{en:"Your chapter foregrounds Titus 1:5 as the ‘order-making’ mandate with local leadership.", ko:"본문은 딛 1:5를 ‘질서 세우기+지역 리더십’의 핵심 구절로 제시한다."}
+        },
+        {
+          q:{en:"In your chapter, Titus 1:12’s ‘Cretans are always liars…’ is treated as…", ko:"본문에서 딛 1:12의 ‘그레데인은…’은 어떻게 다루어지는가?"},
+          options:[
+            {en:"Ethnic hatred endorsed as doctrine", ko:"민족 혐오를 교리로 승인"},
+            {en:"A rhetorical quotation (Epimenides) highlighting cultural notoriety", ko:"수사적 인용(에피메니데스)으로 문화적 악명을 지적"},
+            {en:"A prophecy about Rome’s taxes", ko:"로마 세금에 대한 예언"},
+            {en:"A command to reject all outsiders forever", ko:"모든 외부인을 영구 배척하라는 명령"}
+          ],
+          a:1,
+          exp:{en:"Your chapter: Paul quotes a Cretan poet to note cultural patterns, not to condemn every individual; the aim is counter-cultural formation.", ko:"본문: 바울은 그레데 시인을 인용해 문화적 패턴을 지적할 뿐, 모든 개인을 정죄하려는 것이 아니다. 목적은 대항문화적 형성이다."}
+        },
+        {
+          q:{en:"ὑγιαίνω (Titus 2:1) is glossed as…", ko:"ὑγιαίνω(딛 2:1)는 무엇으로 풀이되는가?"},
+          options:[
+            {en:"Unstable teaching", ko:"불안정한 가르침"},
+            {en:"Healthy / sound teaching", ko:"건강한/건전한 가르침"},
+            {en:"Secret apocalyptic code", ko:"비밀 종말 암호"},
+            {en:"Greek citizenship", ko:"헬라 시민권"}
+          ],
+          a:1,
+          exp:{en:"Your chapter uses the medical metaphor: false teaching is disease; sound teaching is health/cure.", ko:"본문은 의학 은유를 사용한다: 거짓 교훈=질병, 건전한 교훈=건강/치유."}
+        },
+        {
+          q:{en:"Your chapter describes ‘sound doctrine’ as a justice issue because…", ko:"본문에서 ‘건전한 교훈’이 정의 이슈인 이유는?"},
+          options:[
+            {en:"Doctrine is only abstract speculation", ko:"교리는 추상 사변일 뿐이어서"},
+            {en:"Bad theology harms people (abuse, exploitation, structural injustice)", ko:"나쁜 신학이 사람을 해치기 때문(학대/착취/구조적 불의)"},
+            {en:"It guarantees political power", ko:"정치 권력을 보장하기 때문"},
+            {en:"It replaces love and ethics", ko:"사랑과 윤리를 대체하기 때문"}
+          ],
+          a:1,
+          exp:{en:"Your chapter explicitly lists harm examples (psychological abuse, prosperity exploitation, sexism). Doctrine functions as a ‘justice shield.’", ko:"본문은 해악 사례를 직접 든다(심리적 학대, 번영신학 착취, 성차별). 교훈은 ‘정의의 방패’다."}
+        },
+        {
+          q:{en:"In Titus 1:5–9, your chapter says πρεσβύτερος and ἐπίσκοπος are…", ko:"본문에 따르면 딛 1:5–9에서 πρεσβύτερος와 ἐπίσκοπος는?"},
+          options:[
+            {en:"Completely unrelated offices", ko:"완전히 무관한 직분"},
+            {en:"Used interchangeably (elder/overseer) in Titus", ko:"디도서에서는 상호교환적으로 사용(장로/감독)"},
+            {en:"A second-century Ignatian hierarchy already fixed", ko:"2세기 이그나티우스 체계가 이미 고정"},
+            {en:"Titles for Roman governors", ko:"로마 총독의 칭호"}
+          ],
+          a:1,
+          exp:{en:"Your chapter follows Brown/Dunn: terms are synonymous here; later threefold structures develop later.", ko:"본문은 Brown/Dunn을 따라 여기서는 동의어로 본다. 삼중 직제는 후대 발달."}
+        }
+      ]
+    }
+  ],
+  bibliography: [
+    "Barclay, John M.G. 2015. Paul and the Gift. Grand Rapids: Eerdmans.",
+    "Brown, Raymond E. 1997. An Introduction to the New Testament. New York: Doubleday.",
+    "Dunn, James D.G. 2009. Beginning from Jerusalem: Christianity in the Making, Vol. 2. Grand Rapids: Eerdmans.",
+    "Ehrman, Bart D. 2016. The New Testament: A Historical Introduction to the Early Christian Writings. 6th ed. New York: Oxford University Press.",
+    "Wright, N.T. 2013. Paul and the Faithfulness of God. Minneapolis: Fortress Press."
+  ]
+};
+
+/* =========================
+   STATE
+========================= */
+const LS_KEY = "paul_letters_app_v1";
+const state = loadState() || {
+  lang: "en",
+  view: "overview",
+  letterId: "rom",
+  progress: {} // per letter: {checked:true, score:n}
+};
+
+function saveState(){
+  localStorage.setItem(LS_KEY, JSON.stringify(state));
+}
+
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY)); }
+  catch(e){ return null; }
+}
+
+function t(obj){ return obj?.[state.lang] ?? ""; }
+
+/* =========================
+   NAV
+========================= */
+function buildNav(){
+  const nav = document.getElementById("navlist");
+  nav.innerHTML = "";
+
+  // Modules
+  APP.modules.forEach(m=>{
+    const b = document.createElement("button");
+    b.className = "navbtn";
+    b.textContent = `${m.icon} ${t(m.label)}`;
+    b.onclick = ()=>{
+      state.view = m.id;
+      saveState();
+      render();
+    };
+    b.dataset.key = m.id;
+    nav.appendChild(b);
+  });
+
+  // Letters list (inside nav for quick access)
+  const divider = document.createElement("div");
+  divider.style.height = "1px";
+  divider.style.background = "var(--line)";
+  divider.style.margin = "10px 8px";
+  nav.appendChild(divider);
+
+  const lettersLabel = document.createElement("div");
+  lettersLabel.className = "muted";
+  lettersLabel.style.padding = "0 10px 6px";
+  lettersLabel.style.fontSize = "12px";
+  lettersLabel.textContent = state.lang === "en" ? "Letters (highlighted in chapter)" : "서신(이 장의 핵심 서신)";
+  nav.appendChild(lettersLabel);
+
+  APP.letters.forEach(L=>{
+    const b = document.createElement("button");
+    b.className = "navbtn";
+    b.textContent = `✉ ${t(L.title)}`;
+    b.onclick = ()=>{
+      state.view = "letter";
+      state.letterId = L.id;
+      saveState();
+      render();
+    };
+    b.dataset.key = `letter:${L.id}`;
+    nav.appendChild(b);
+  });
+
+  highlightActiveNav();
+}
+
+function highlightActiveNav(){
+  document.querySelectorAll(".navbtn").forEach(btn=>btn.classList.remove("active"));
+  const key = state.view === "letter" ? `letter:${state.letterId}` : state.view;
+  const active = document.querySelector(`.navbtn[data-key="${key}"]`);
+  if(active) active.classList.add("active");
+}
+
+/* =========================
+   RENDER
+========================= */
+function render(){
+  // Titles
+  document.getElementById("appTitle").textContent = t(APP.meta.title);
+  document.getElementById("appSub").textContent = t(APP.meta.subtitle);
+  document.getElementById("navKicker").textContent = state.lang === "en" ? "Navigate" : "이동";
+  document.getElementById("navHint").textContent = state.lang === "en" ? "Choose a module or a letter." : "모듈 또는 서신을 선택하세요.";
+
+  // Progress
+  updateProgressPill();
+
+  // Footer
+  const footer = document.getElementById("footer");
+  footer.innerHTML = `
+    <div class="mono">${state.lang === "en" ? "Bibliography (as given in the chapter)" : "참고문헌(본문 제공)"}:</div>
+    <ul>
+      ${APP.bibliography.map(x=>`<li>${escapeHtml(x)}</li>`).join("")}
+    </ul>
+    <div class="mono">${state.lang === "en"
+      ? "Tip: This app saves quiz progress in your browser (localStorage). Use Reset to clear."
+      : "팁: 이 앱은 브라우저(localStorage)에 진행도를 저장합니다. Reset으로 초기화할 수 있습니다."}
+    </div>
+  `;
+
+  // Content
+  const content = document.getElementById("content");
+  if(state.view === "overview") content.innerHTML = renderOverview();
+  else if(state.view === "paul") content.innerHTML = renderPaul();
+  else if(state.view === "sources") content.innerHTML = renderSources();
+  else if(state.view === "glossary") content.innerHTML = renderGlossary();
+  else if(state.view === "letters") content.innerHTML = renderLettersHub();
+  else if(state.view === "letter") content.innerHTML = renderLetter(state.letterId);
+  else content.innerHTML = renderOverview();
+
+  // Bind quiz buttons if present
+  bindQuizHandlers();
+
+  highlightActiveNav();
+}
+
+function renderOverview(){
+  const cards = APP.overview.cards.map(c=>`
+    <div class="card">
+      <div class="kicker">${state.lang === "en" ? "FRAME" : "프레임"}</div>
+      <h3>${escapeHtml(t(c.title))}</h3>
+      <div class="muted">${escapeHtml(t(c.body))}</div>
+      <div class="tagrow">
+        ${c.tags.map(tag=>`<span class="tag">${escapeHtml(t(tag))}</span>`).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  return `
+    <div class="grid2">${cards}</div>
+    <div class="hr"></div>
+    <div class="card">
+      <h3>${state.lang === "en" ? "How to use this app" : "이 앱 사용법"}</h3>
+      <div class="muted">${escapeHtml(t(APP.overview.note))}</div>
+      <div class="tagrow">
+        <span class="tag">${state.lang === "en" ? "Crisis Node" : "위기 노드"}</span>
+        <span class="tag">${state.lang === "en" ? "Kairos Moment" : "카이로스 순간"}</span>
+        <span class="tag">${state.lang === "en" ? "Justice Shield" : "정의의 방패"}</span>
+        <span class="tag">${state.lang === "en" ? "Target Node" : "목표 노드"}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderPaul(){
+  const blocks = APP.paul.blocks.map(b=>`
+    <details open>
+      <summary>${escapeHtml(t(b.title))}</summary>
+      <div style="margin-top:10px" class="muted">${escapeHtml(t(b.body))}</div>
+    </details>
+  `).join("<div style='height:10px'></div>");
+
+  return `
+    <div class="card">
+      <div class="kicker">${state.lang === "en" ? "MODULE" : "모듈"}</div>
+      <h3>${state.lang === "en" ? "Paul the Person — Multi-layered Identity" : "바울 — 다층 정체성"}</h3>
+      <div class="muted">
+        ${state.lang === "en"
+          ? "Four lenses summarized from your chapter: Jewish foundation, Greek fluency, Roman citizenship, Damascus reversal."
+          : "본문을 요약한 네 렌즈: 유대 토대, 헬라 문화 능력, 로마 시민권, 다메섹 전환."}
+      </div>
+    </div>
+    <div class="hr"></div>
+    ${blocks}
+  `;
+}
+
+function renderSources(){
+  const cards = APP.sources.cards.map(c=>`
+    <div class="card">
+      <h3>${escapeHtml(t(c.title))}</h3>
+      <div class="muted">${escapeHtml(t(c.body))}</div>
+    </div>
+  `).join("");
+
+  return `
+    <div class="grid2">${cards}</div>
+    <div class="hr"></div>
+    <div class="card">
+      <h3>${state.lang === "en" ? "Pedagogical key" : "교육적 핵심"}</h3>
+      <div class="muted">${escapeHtml(t(APP.sources.note))}</div>
+    </div>
+  `;
+}
+
+function renderGlossary(){
+  return `
+    <div class="card">
+      <div class="kicker">${state.lang === "en" ? "GLOSSARY" : "용어"}</div>
+      <h3>${state.lang === "en" ? "Greek terms used in this chapter" : "이 장에서 사용된 헬라어 핵심 용어"}</h3>
+      <div class="muted">${state.lang === "en"
+        ? "Short glosses for classroom recall. You can extend these into word studies later."
+        : "수업 리콜용 요약. 이후 단어 연구로 확장할 수 있습니다."}
+      </div>
+    </div>
+    <div class="hr"></div>
+    <div class="card">
+      <ul>
+        ${APP.glossary.map(g=>`<li><span class="mono">${escapeHtml(g.term)}</span> — ${escapeHtml(t(g.gloss))}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function renderLettersHub(){
+  const items = APP.letters.map(L=>{
+    const p = state.progress[L.id];
+    const badge = p?.checked ? `${p.score}/5` : (state.lang==="en" ? "Not taken" : "미응시");
+    return `
+      <div class="card">
+        <div class="kicker">${state.lang === "en" ? "LETTER" : "서신"}</div>
+        <h3>${escapeHtml(t(L.title))}</h3>
+        <div class="muted">${escapeHtml(t(L.focus))}</div>
+        <div class="tagrow">
+          <span class="tag">${state.lang==="en" ? "Quiz" : "퀴즈"}: <strong style="color:var(--accent)">${badge}</strong></span>
+          <button onclick="goLetter('${L.id}')" style="margin-left:auto">${state.lang==="en" ? "Open" : "열기"}</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="card">
+      <div class="kicker">${state.lang === "en" ? "HUB" : "허브"}</div>
+      <h3>${state.lang === "en" ? "Letters as Metabus Routes" : "서신 = 메타버스 노선(형성 경로)"}</h3>
+      <div class="muted">${state.lang === "en"
+        ? "Each letter page includes a formation summary + a 5-question MC quiz with feedback."
+        : "각 서신 페이지에는 형성 요약 + 5문항 객관식(피드백 포함)이 있습니다."}</div>
+    </div>
+    <div class="hr"></div>
+    <div class="grid2">${items}</div>
+  `;
+}
+
+function renderLetter(letterId){
+  const L = APP.letters.find(x=>x.id===letterId) || APP.letters[0];
+  const saved = state.progress[L.id];
+  const header = `
+    <div class="card">
+      <div class="kicker">${state.lang === "en" ? "LETTER" : "서신"}</div>
+      <h3>${escapeHtml(t(L.title))}</h3>
+      <div class="muted">${escapeHtml(t(L.focus))}</div>
+      <div class="tagrow">
+        <span class="tag">${state.lang==="en" ? "Saved score" : "저장 점수"}: <strong style="color:var(--accent)">${saved?.checked ? `${saved.score}/5` : (state.lang==="en" ? "—" : "—")}</strong></span>
+        <button onclick="state.view='letters'; saveState(); render();">${state.lang==="en" ? "Back to hub" : "허브로"}</button>
+      </div>
+    </div>
+  `;
+
+  const summary = `
+    <div class="card">
+      <h3>${state.lang==="en" ? "Formation summary" : "형성 요약"}</h3>
+      <ul>
+        ${L.summary.map(x=>`<li>${escapeHtml(state.lang==="en" ? x.en : x.ko)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+
+  const quiz = `
+    <div class="card">
+      <h3>${state.lang==="en" ? "Quiz (5 MC)" : "퀴즈 (객관식 5문항)"}</h3>
+      <div class="muted">${state.lang==="en"
+        ? "Select answers, then click “Check & Score.”"
+        : "답을 선택한 뒤 “채점하기”를 누르세요."}</div>
+      <div class="hr"></div>
+      <div id="quizArea">
+        ${L.quiz.map((Q, i)=>renderQuestion(L.id, i, Q)).join("")}
+      </div>
+      <div class="tagrow" style="margin-top:12px">
+        <button class="checkBtn" data-letter="${L.id}">${state.lang==="en" ? "Check & Score" : "채점하기"}</button>
+        <button class="clearBtn" data-letter="${L.id}">${state.lang==="en" ? "Clear selections" : "선택 지우기"}</button>
+      </div>
+      <div id="score_${L.id}" style="margin-top:12px"></div>
+    </div>
+  `;
+
+  return `${header}<div class="hr"></div><div class="grid2">${summary}${quiz}</div>`;
+}
+
+function renderQuestion(letterId, idx, Q){
+  const name = `${letterId}_q${idx}`;
+  const savedChoice = (state.progress?.[letterId]?.answers && state.progress[letterId].answers[name] !== undefined)
+    ? state.progress[letterId].answers[name]
+    : undefined;
+
+  return `
+    <div class="quizQ" id="wrap_${name}">
+      <div class="qtitle">${idx+1}. ${escapeHtml(t(Q.q))}</div>
+      ${Q.options.map((opt, j)=>`
+        <label class="opt">
+          <input type="radio" name="${name}" value="${j}" ${savedChoice===j ? "checked" : ""} />
+          <span>${escapeHtml(t(opt))}</span>
+        </label>
+      `).join("")}
+      <div class="feedback" id="fb_${name}" style="display:none;"></div>
+    </div>
+  `;
+}
+
+/* =========================
+   QUIZ HANDLERS
+========================= */
+function bindQuizHandlers(){
+  document.querySelectorAll(".checkBtn").forEach(btn=>{
+    btn.onclick = ()=>checkQuiz(btn.dataset.letter);
+  });
+  document.querySelectorAll(".clearBtn").forEach(btn=>{
+    btn.onclick = ()=>clearQuiz(btn.dataset.letter);
+  });
+
+  // persist selections as user clicks
+  document.querySelectorAll("input[type=radio]").forEach(r=>{
+    r.onchange = ()=>{
+      const [letterId] = r.name.split("_q");
+      state.progress[letterId] = state.progress[letterId] || { checked:false, score:0, answers:{} };
+      state.progress[letterId].answers[r.name] = Number(r.value);
+      saveState();
+    };
+  });
+}
+
+function checkQuiz(letterId){
+  const L = APP.letters.find(x=>x.id===letterId);
+  if(!L) return;
+
+  let correct = 0;
+  state.progress[letterId] = state.progress[letterId] || { checked:false, score:0, answers:{} };
+  const answers = state.progress[letterId].answers || {};
+
+  L.quiz.forEach((Q, i)=>{
+    const name = `${letterId}_q${i}`;
+    const chosen = getChosen(name, answers);
+    const wrap = document.getElementById(`wrap_${name}`);
+    const fb = document.getElementById(`fb_${name}`);
+    fb.style.display = "block";
+
+    if(chosen === Q.a){
+      correct++;
+      wrap.classList.remove("bad"); wrap.classList.add("good");
+      fb.classList.remove("bad"); fb.classList.add("good");
+      fb.innerHTML = `<strong>${state.lang==="en" ? "Correct." : "정답입니다."}</strong> ${escapeHtml(t(Q.exp))}`;
+    } else {
+      wrap.classList.remove("good"); wrap.classList.add("bad");
+      fb.classList.remove("good"); fb.classList.add("bad");
+      const chosenText = (chosen === undefined)
+        ? (state.lang==="en" ? "No answer selected." : "선택한 답이 없습니다.")
+        : (state.lang==="en" ? "Your answer: " : "내 답: ") + escapeHtml(t(Q.options[chosen]));
+      const rightText = (state.lang==="en" ? "Correct answer: " : "정답: ") + escapeHtml(t(Q.options[Q.a]));
+      fb.innerHTML = `<strong>${state.lang==="en" ? "Not quite." : "아쉽습니다."}</strong> ${chosenText}<br>${rightText}<br><span class="muted">${escapeHtml(t(Q.exp))}</span>`;
+    }
+  });
+
+  state.progress[letterId].checked = true;
+  state.progress[letterId].score = correct;
+  saveState();
+
+  const scoreDiv = document.getElementById(`score_${letterId}`);
+  scoreDiv.innerHTML = `
+    <div class="scorebox">
+      <span>${state.lang==="en" ? "Score" : "점수"}:</span>
+      <strong>${correct}/5</strong>
+      <span class="muted">• ${state.lang==="en" ? "Saved" : "저장됨"}</span>
+    </div>
+  `;
+
+  updateProgressPill();
+  highlightActiveNav();
+}
+
+function clearQuiz(letterId){
+  const L = APP.letters.find(x=>x.id===letterId);
+  if(!L) return;
+
+  // clear UI radio selections
+  L.quiz.forEach((Q, i)=>{
+    const name = `${letterId}_q${i}`;
+    document.querySelectorAll(`input[name="${name}"]`).forEach(x=>x.checked=false);
+    const fb = document.getElementById(`fb_${name}`);
+    const wrap = document.getElementById(`wrap_${name}`);
+    if(fb){ fb.style.display="none"; fb.innerHTML=""; fb.classList.remove("good","bad"); }
+    if(wrap){ wrap.classList.remove("good","bad"); }
+  });
+
+  // clear saved
+  state.progress[letterId] = state.progress[letterId] || {};
+  state.progress[letterId].answers = {};
+  state.progress[letterId].checked = false;
+  state.progress[letterId].score = 0;
+  saveState();
+
+  const scoreDiv = document.getElementById(`score_${letterId}`);
+  if(scoreDiv) scoreDiv.innerHTML = "";
+  updateProgressPill();
+}
+
+function getChosen(name, answers){
+  const live = document.querySelector(`input[name="${name}"]:checked`);
+  if(live) return Number(live.value);
+  if(answers && answers[name] !== undefined) return Number(answers[name]);
+  return undefined;
+}
+
+/* =========================
+   PROGRESS
+========================= */
+function updateProgressPill(){
+  const total = APP.letters.length;
+  const done = APP.letters.filter(L => state.progress[L.id]?.checked).length;
+  const pct = total ? Math.round((done/total)*100) : 0;
+  document.getElementById("progressPill").innerHTML = `Progress: <strong>${pct}%</strong>`;
+}
+
+/* =========================
+   UTILS / ACTIONS
+========================= */
+function escapeHtml(s){
+  return String(s ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+function goLetter(id){
+  state.view = "letter";
+  state.letterId = id;
+  saveState();
+  render();
+}
+window.goLetter = goLetter;
+
+/* =========================
+   CONTROLS
+========================= */
+document.getElementById("langBtn").onclick = ()=>{
+  state.lang = (state.lang === "en") ? "ko" : "en";
+  document.getElementById("langBtn").textContent = (state.lang === "en") ? "한국어" : "English";
+  saveState();
+  buildNav();
+  render();
+};
+
+document.getElementById("resetBtn").onclick = ()=>{
+  if(confirm(state.lang==="en" ? "Reset all saved progress and answers?" : "저장된 진행도/답안을 모두 초기화할까요?")){
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+  }
+};
+
+/* =========================
+   INIT
+========================= */
+(function init(){
+  document.getElementById("langBtn").textContent = (state.lang === "en") ? "한국어" : "English";
+  buildNav();
+  render();
+})();
+</script>
+</body>
+</html>
